@@ -1,6 +1,6 @@
 # calkuta
 
-A new Flutter project.
+Cooperative simplified app.
 
 ## Getting Started
 
