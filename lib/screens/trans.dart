@@ -1,3 +1,6 @@
+import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:calkuta/models/contributor.dart';
+import 'package:calkuta/screens/profile.dart';
 import 'package:calkuta/util/database_helper.dart';
 import 'package:calkuta/util/my_color.dart';
 import 'package:calkuta/util/progress.dart';
@@ -84,6 +87,7 @@ class _TransactionListState extends State<TransactionList> {
       itemCount: transactions.length,
       itemBuilder: (context, index) {
         Transaction transaction = transactions[index];
+        final contrib = Contributor(id: transaction.contributorId);
 
         // Determine the color and icon based on transaction type
         Color color = transaction.type == 'deposit' ? Colors.green : Colors.red;
@@ -107,6 +111,34 @@ class _TransactionListState extends State<TransactionList> {
                 '₦$amount',
                 style: TextStyle(color: color),
               ),
+              onTap: () {
+                if (transaction.contributorId! > 0) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => Profile(contributor: contrib)),
+                  );
+                }
+              },
+              onLongPress: (() {
+                AwesomeDialog(
+                  context: context,
+                  dialogType: DialogType.question,
+                  animType: AnimType.topSlide,
+                  title: 'Delete transaction?',
+                  desc:
+                      'Are you sure you want to delete this transaction? \n\n ${transaction.name} | ${transaction.amount} | ${transaction.remark}',
+                  btnCancelText: 'No',
+                  btnOkText: 'Yes',
+                  btnCancelOnPress: () {
+                    Navigator.pop(context);
+                  },
+                  btnOkOnPress: () async {
+                    await DatabaseHelper().deleteTransaction(transaction.id!);
+                    Navigator.pushNamed(context, '/');
+                  },
+                ).show();
+              }),
             ),
           ),
         );
@@ -128,6 +160,7 @@ class _TransactionListState extends State<TransactionList> {
       itemCount: deposits.length,
       itemBuilder: (context, index) {
         Transaction transaction = deposits[index];
+        final contrib = Contributor(id: transaction.contributorId);
 
         // Determine the color and icon based on transaction type
         Color color = transaction.type == 'deposit' ? Colors.green : Colors.red;
@@ -151,6 +184,34 @@ class _TransactionListState extends State<TransactionList> {
               '₦$amount',
               style: TextStyle(color: color),
             ),
+            onTap: () {
+              if (transaction.contributorId! > 0) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => Profile(contributor: contrib)),
+                );
+              }
+            },
+            onLongPress: (() {
+              AwesomeDialog(
+                context: context,
+                dialogType: DialogType.question,
+                animType: AnimType.topSlide,
+                title: 'Delete transaction?',
+                desc:
+                    'Are you sure you want to delete this transaction? \n\n ${transaction.name} | ${transaction.amount} | ${transaction.remark}',
+                btnCancelText: 'No',
+                btnOkText: 'Yes',
+                btnCancelOnPress: () {
+                  Navigator.pop(context);
+                },
+                btnOkOnPress: () async {
+                  await DatabaseHelper().deleteTransaction(transaction.id!);
+                  Navigator.pushNamed(context, '/');
+                },
+              ).show();
+            }),
           ),
         );
       },
@@ -171,6 +232,7 @@ class _TransactionListState extends State<TransactionList> {
       itemCount: withdraws.length,
       itemBuilder: (context, index) {
         Transaction transaction = withdraws[index];
+        final contrib = Contributor(id: transaction.contributorId);
 
         // Determine the color and icon based on transaction type
         Color color = transaction.type == 'deposit' ? Colors.green : Colors.red;
@@ -194,6 +256,34 @@ class _TransactionListState extends State<TransactionList> {
               '₦$amount',
               style: TextStyle(color: color),
             ),
+            onTap: () {
+              if (transaction.contributorId! > 0) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => Profile(contributor: contrib)),
+                );
+              }
+            },
+            onLongPress: (() {
+              AwesomeDialog(
+                context: context,
+                dialogType: DialogType.question,
+                animType: AnimType.topSlide,
+                title: 'Delete transaction?',
+                desc:
+                    'Are you sure you want to delete this transaction? \n\n ${transaction.name} | ${transaction.amount} | ${transaction.remark}',
+                btnCancelText: 'No',
+                btnOkText: 'Yes',
+                btnCancelOnPress: () {
+                  Navigator.pop(context);
+                },
+                btnOkOnPress: () async {
+                  await DatabaseHelper().deleteTransaction(transaction.id!);
+                  Navigator.pushNamed(context, '/');
+                },
+              ).show();
+            }),
           ),
         );
       },
@@ -216,15 +306,20 @@ class _TransactionListState extends State<TransactionList> {
 enum TransactionType { deposit, withdraw }
 
 class Transaction {
+  int? id;
+  int? contributorId;
   String? name;
   String? date;
   double? amount;
   String? type;
   String? remark;
 
-  Transaction(this.name, this.date, this.amount, this.type, this.remark);
+  Transaction(this.id, this.contributorId, this.name, this.date, this.amount,
+      this.type, this.remark);
 
   Transaction.fromMapObject(Map<String, dynamic> map) {
+    id = map['id'];
+    contributorId = map['contributorId'];
     name = map['name'];
     amount = map['amount'];
     type = map['type'];

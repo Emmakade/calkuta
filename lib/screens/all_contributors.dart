@@ -9,7 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
 
 class AllContributors extends StatefulWidget {
-  AllContributors({Key? key}) : super(key: key);
+  const AllContributors({Key? key}) : super(key: key);
 
   @override
   State<AllContributors> createState() => _AllContributorsState();

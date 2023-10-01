@@ -1,15 +1,17 @@
 import 'dart:io';
 
+import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:calkuta/models/contributor.dart';
 import 'package:calkuta/screens/registration_screen.dart';
 import 'package:calkuta/screens/trans.dart';
 import 'package:calkuta/util/database_helper.dart';
 import 'package:calkuta/util/my_color.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 class Profile extends StatefulWidget {
-  Profile({Key? key, required this.contributor}) : super(key: key);
+  const Profile({Key? key, required this.contributor}) : super(key: key);
   final Contributor contributor;
 
   @override
@@ -18,7 +20,7 @@ class Profile extends StatefulWidget {
 
 class _ProfileState extends State<Profile> {
   DatabaseHelper databaseHelper = DatabaseHelper();
-  //Contributor? contributotProfile;
+  late Contributor contributorProfile;
   Map<String, dynamic> profileMaps = {};
   List<Transaction> userTransaction = [];
   int? id;
@@ -32,6 +34,7 @@ class _ProfileState extends State<Profile> {
   @override
   void initState() {
     super.initState();
+    contributorProfile = widget.contributor;
     getProfileDetails();
   }
 
@@ -39,8 +42,9 @@ class _ProfileState extends State<Profile> {
   Widget build(BuildContext context) {
     var color2 = Colors.grey;
     id = widget.contributor.id;
-    myName = widget.contributor.name;
+    myName = contributorProfile.name;
     isImageNull = profileImage == null ? true : false;
+
     return Scaffold(
       backgroundColor: color2,
       appBar: AppBar(
@@ -48,6 +52,9 @@ class _ProfileState extends State<Profile> {
         title: const Text('USER\'S PROFILE'),
         shadowColor: Colors.transparent,
         backgroundColor: color2,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.light),
         actions: [
           IconButton(
             onPressed: () {
@@ -56,7 +63,7 @@ class _ProfileState extends State<Profile> {
                 MaterialPageRoute(
                     builder: (context) => RegistrationScreen(
                           appBarTitle: 'EDIT USER',
-                          contributor: widget.contributor,
+                          contributor: contributorProfile,
                         )),
               );
             },
@@ -117,7 +124,7 @@ class _ProfileState extends State<Profile> {
                       Container(
                         alignment: Alignment.center,
                         child: Text(
-                          '${profileMaps['name']}',
+                          '${contributorProfile.name}',
                           style: const TextStyle(
                             color: MyColor.mytheme,
                             fontWeight: FontWeight.bold,
@@ -128,7 +135,7 @@ class _ProfileState extends State<Profile> {
                       Container(
                         alignment: Alignment.center,
                         child: Text(
-                          '${profileMaps['id']}',
+                          '${contributorProfile.id}',
                           style: const TextStyle(
                               color: Colors.cyanAccent,
                               fontWeight: FontWeight.normal,
@@ -154,32 +161,32 @@ class _ProfileState extends State<Profile> {
                       DataRow(cells: [
                         const DataCell(Text('Bank:',
                             style: TextStyle(color: Colors.white))),
-                        DataCell(Text('${profileMaps['bankName']}',
+                        DataCell(Text('${contributorProfile.bankName}',
                             style: const TextStyle(color: Colors.white)))
                       ]),
                       DataRow(cells: [
                         const DataCell(Text('Account Number:',
                             style: TextStyle(color: Colors.white))),
-                        DataCell(Text('${profileMaps['bankAcctNo']}',
+                        DataCell(Text('${contributorProfile.bankAcctNo}',
                             style: const TextStyle(color: Colors.white)))
                       ]),
                       DataRow(cells: [
                         const DataCell(Text('Gender:',
                             style: TextStyle(color: Colors.white))),
-                        DataCell(Text('${profileMaps['gender']}',
+                        DataCell(Text('${contributorProfile.gender}',
                             style: const TextStyle(color: Colors.white)))
                       ]),
                       DataRow(cells: [
                         const DataCell(Text('Phone:',
                             style: TextStyle(color: Colors.white))),
-                        DataCell(Text('${profileMaps['phone']}',
+                        DataCell(Text('${contributorProfile.phone}',
                             style: const TextStyle(color: Colors.white)))
                       ]),
                       DataRow(cells: [
                         const DataCell(Text('Email:',
                             style: TextStyle(color: Colors.white))),
                         DataCell(Text(
-                          '${profileMaps['email']}',
+                          '${contributorProfile.email}',
                           style: const TextStyle(
                             color: Colors.white,
                           ),
@@ -188,13 +195,13 @@ class _ProfileState extends State<Profile> {
                       DataRow(cells: [
                         const DataCell(Text('Address:',
                             style: TextStyle(color: Colors.white))),
-                        DataCell(Text('${profileMaps['addr']}',
+                        DataCell(Text('${contributorProfile.addr}',
                             style: const TextStyle(color: Colors.white)))
                       ]),
                       DataRow(cells: [
                         const DataCell(Text('DateJoined:',
                             style: TextStyle(color: Colors.white))),
-                        DataCell(Text('${profileMaps['dateJoined']}',
+                        DataCell(Text('${contributorProfile.dateJoined}',
                             style: const TextStyle(color: Colors.white)))
                       ]),
                     ]),
@@ -225,13 +232,15 @@ class _ProfileState extends State<Profile> {
 
   void getProfileDetails() async {
     final profileMapList =
-        await databaseHelper.getUserMapList(widget.contributor);
+        await databaseHelper.getUserMapList(widget.contributor.id!);
     double pBalance = 0;
     NumberFormat myformat = NumberFormat.decimalPattern('en_us');
     List<Map<String, dynamic>> resultList = profileMapList.toList();
     profileMaps = convertQueryResultSet(resultList);
+    //print("profileMaps: $profileMaps");
 
     setState(() {
+      contributorProfile = Contributor.fromMapObject(profileMaps);
       pBalance = profileMaps['balance'];
       profileImage = profileMaps['imageDp'];
       myBalance = myformat.format(pBalance);
@@ -254,11 +263,18 @@ class _ProfileState extends State<Profile> {
   }
 
   Future<void> showOverlay(BuildContext context) async {
-    final userTrans = await databaseHelper.getUserTransactionMapList(id!);
+    Map<String, dynamic> userTransactionDetails =
+        await databaseHelper.getUserTransactionDetails(id!);
+    List<Map<String, dynamic>> transactions =
+        userTransactionDetails['transactions'];
+    NumberFormat myformat = NumberFormat.decimalPattern('en_us');
+
+    double totalAmount = userTransactionDetails['totalAmount'];
+    String total = myformat.format(totalAmount);
 
     setState(() {
-      userTransaction = List.generate(userTrans.length, (index) {
-        return Transaction.fromMapObject(userTrans[index]);
+      userTransaction = List.generate(transactions.length, (index) {
+        return Transaction.fromMapObject(transactions[index]);
       });
     });
     final sortedTransactions = userTransaction
@@ -290,8 +306,6 @@ class _ProfileState extends State<Profile> {
                           ? Icon(Icons.arrow_downward, color: color)
                           : Icon(Icons.arrow_upward, color: color);
                       double transAmount = trans.amount!;
-                      NumberFormat myformat =
-                          NumberFormat.decimalPattern('en_us');
 
                       String amount = myformat.format(transAmount);
 
@@ -301,11 +315,17 @@ class _ProfileState extends State<Profile> {
                       return Card(
                         child: ListTile(
                           leading: icon,
-                          title: Text('$myName'),
-                          subtitle: Text("${trans.date!}\n $remark"),
-                          trailing: Text(
+                          title: Text(
                             '₦$amount',
                             style: TextStyle(color: color),
+                          ),
+                          subtitle: Text("${trans.date!}\n $remark"),
+                          trailing: GestureDetector(
+                            onTap: (() {}),
+                            child: const Icon(
+                              Icons.delete,
+                              color: Colors.orange,
+                            ),
                           ),
                         ),
                       );
@@ -313,15 +333,29 @@ class _ProfileState extends State<Profile> {
               ),
             ),
             Positioned(
-              top: 30,
+              top: 40,
               right: 16,
-              child: IconButton(
-                icon: const Icon(Icons.close),
-                color: Colors.white,
-                iconSize: 30,
-                onPressed: () {
-                  removeOverlay(overlayEntry!);
-                },
+              child: Row(
+                children: [
+                  Text(
+                    "Total: $total",
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    color: Colors.white,
+                    iconSize: 30,
+                    onPressed: () {
+                      removeOverlay(overlayEntry!);
+                    },
+                  ),
+                ],
               ),
             ),
           ],

@@ -178,7 +178,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         body: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: ListView(
+          child: Column(
             children: <Widget>[
               const SizedBox(
                 height: 10,
@@ -211,9 +211,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) =>
-                                    const TransactionInputScreen(
-                                        transactionStat: true)));
+                                builder: (context) => TransactionInputScreen(
+                                      transactionStat: true,
+                                      totalBal: totalBalance,
+                                    )));
                       },
                     ),
                   ),
@@ -227,9 +228,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) =>
-                                    const TransactionInputScreen(
-                                        transactionStat: false)));
+                                builder: (context) => TransactionInputScreen(
+                                      transactionStat: false,
+                                      totalBal: totalBalance,
+                                    )));
                       },
                     ),
                   )
@@ -242,46 +244,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(
                 height: 10,
               ),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: <Widget>[
-                      const Text(
-                        'Transaction List',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 20),
-                      ),
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            side: const BorderSide(
-                                color: MyColor.mytheme, width: 1.0)),
-                        icon: const Icon(Icons.arrow_circle_right,
-                            color: Color.fromARGB(255, 127, 98, 132), size: 20),
-                        label: const Text(
-                          'View All',
-                          style: TextStyle(
-                              color: Color.fromARGB(255, 127, 98, 132),
-                              fontSize: 18.0,
-                              fontWeight: FontWeight.w900),
-                        ),
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/trans');
-                        },
-                      )
-                    ],
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  const Text(
+                    'Transaction List',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
                   ),
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  SizedBox(
-                    height: 300,
-                    child: totalBalance > 0 ? const DashList() : Container(),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        side: const BorderSide(
+                            color: MyColor.mytheme, width: 1.0)),
+                    icon: const Icon(Icons.arrow_circle_right,
+                        color: Color.fromARGB(255, 127, 98, 132), size: 20),
+                    label: const Text(
+                      'View All',
+                      style: TextStyle(
+                          color: Color.fromARGB(255, 127, 98, 132),
+                          fontSize: 18.0,
+                          fontWeight: FontWeight.w900),
+                    ),
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/trans');
+                    },
                   )
                 ],
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              Expanded(
+                child: totalBalance > 0 ? const DashList() : Container(),
               )
             ],
           ),

@@ -1,3 +1,6 @@
+import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:calkuta/models/contributor.dart';
+import 'package:calkuta/screens/profile.dart';
 import 'package:calkuta/screens/trans.dart';
 import 'package:calkuta/util/database_helper.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +31,7 @@ class _DashListState extends State<DashList> {
       itemCount: transactions.length,
       itemBuilder: (context, index) {
         Transaction transaction = transactions[index];
+        final contrib = Contributor(id: transaction.contributorId);
         Color? color;
         Icon? icon;
         double? transAmount;
@@ -59,6 +63,32 @@ class _DashListState extends State<DashList> {
                 '₦$amount',
                 style: TextStyle(color: color),
               ),
+              onTap: () {
+                if (transaction.contributorId! > 0) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => Profile(contributor: contrib)),
+                  );
+                }
+              },
+              onLongPress: () {
+                AwesomeDialog(
+                  context: context,
+                  dialogType: DialogType.question,
+                  animType: AnimType.topSlide,
+                  title: 'Delete transaction?',
+                  desc:
+                      'Are you sure you want to delete this transaction? \n\n ${transaction.name} | ${transaction.amount} | ${transaction.remark}',
+                  btnCancelText: 'No',
+                  btnOkText: 'Yes',
+                  btnCancelOnPress: () {},
+                  btnOkOnPress: () async {
+                    await DatabaseHelper().deleteTransaction(transaction.id!);
+                    Navigator.pushNamed(context, '/');
+                  },
+                ).show();
+              },
             ),
           ),
         );

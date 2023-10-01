@@ -19,13 +19,11 @@ class DatabaseHelper {
     final databasesPath = await getDatabasesPath();
     final path = p.join(databasesPath, 'calkuta.db');
 
-    return await openDatabase(path, version: 2,
-        onCreate: (Database db, int version) async {
-      //TODO To Add
-      // modify model, registration, profile,
-      //create a table to hold username nad password
-      //create a table to hold bank names and code
-      await db.execute('''
+    return await openDatabase(
+      path,
+      version: 1,
+      onCreate: (Database db, int version) async {
+        await db.execute('''
           CREATE TABLE contributors(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
@@ -41,7 +39,7 @@ class DatabaseHelper {
           )
         ''');
 
-      await db.execute('''
+        await db.execute('''
           CREATE TABLE transactions(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             date TEXT NOT NULL,
@@ -53,8 +51,8 @@ class DatabaseHelper {
           )
         ''');
 
-      // Create the trigger to update the contributor balance
-      await db.execute('''
+        // Create the trigger to update the contributor balance
+        await db.execute('''
           CREATE TRIGGER update_balance AFTER INSERT ON transactions
           BEGIN
             UPDATE contributors
@@ -62,14 +60,8 @@ class DatabaseHelper {
             WHERE id = NEW.contributorId;
           END;
         ''');
-    }, onUpgrade: _onUpgrade);
-  }
-
-  static void _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      // Add the new column 'remark' to the 'transactions' table
-      await db.execute('ALTER TABLE transactions ADD COLUMN remark TEXT NULL');
-    }
+      },
+    );
   }
 
   //fetch Operation: Get all contributor objects from database
@@ -94,29 +86,32 @@ class DatabaseHelper {
   Future<List<Map<String, dynamic>>> getTenTransactionMapList() async {
     Database? db = await database;
 
-    //TODO: check this query on empty database
     final result = await db.rawQuery(
         'SELECT * FROM contributors LEFT JOIN transactions ON contributors.id = transactions.contributorId WHERE amount IS NOT NULL ORDER BY transactions.id DESC LIMIT 10');
-
     return result;
   }
 
-  //fetch Operation: Get a single user transactions objects from database
-  Future<List<Map<String, dynamic>>> getUserTransactionMapList(int id) async {
+  //fetch Operation: Get a single user transactions map and totalAmount from database
+  Future<Map<String, dynamic>> getUserTransactionDetails(int id) async {
     Database? db = await database;
 
-    final result = await db.rawQuery(
+    final transactions = await db.rawQuery(
         'SELECT * FROM transactions WHERE contributorId = $id ORDER BY transactions.date DESC');
-    return result;
+
+    double totalAmount = 0.0;
+    for (var transaction in transactions) {
+      totalAmount += transaction['amount'] as double;
+    }
+
+    return {'transactions': transactions, 'totalAmount': totalAmount};
   }
 
   //fetch Operation: Get a single user contributor objects from database
-  Future<List<Map<String, dynamic>>> getUserMapList(
-      Contributor contributor) async {
+  Future<List<Map<String, dynamic>>> getUserMapList(int? id) async {
     Database? db = await database;
 
-    final result = await db
-        .rawQuery('SELECT * FROM contributors WHERE id = ${contributor.id}');
+    final result =
+        await db.rawQuery('SELECT * FROM contributors WHERE id = $id');
     return result;
   }
 
@@ -200,5 +195,27 @@ class DatabaseHelper {
       totalBalance += contributor.balance ?? 0;
     }
     return totalBalance;
+  }
+
+  Future<void> deleteTransaction(int transactionId) async {
+    final db = await database;
+    try {
+      // Retrieve the transaction details before deletion
+      final transactionDetails = await db
+          .query('transactions', where: 'id = ?', whereArgs: [transactionId]);
+
+      // Delete the transaction
+      await db
+          .execute('DELETE FROM transactions WHERE id = ?', [transactionId]);
+
+      // Update the contributor's balance
+      final contributorId = transactionDetails[0]['contributorId'];
+      final transactionAmount = transactionDetails[0]['amount'];
+      await db.execute(
+          'UPDATE contributors SET balance = balance - ? WHERE id = ?',
+          [transactionAmount, contributorId]);
+    } catch (e) {
+      print('Error deleting transaction: $e');
+    }
   }
 }

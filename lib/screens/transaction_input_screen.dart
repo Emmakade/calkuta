@@ -9,10 +9,13 @@ import 'package:intl/intl.dart';
 
 class TransactionInputScreen extends StatefulWidget {
   final bool transactionStat;
-  const TransactionInputScreen({super.key, required this.transactionStat});
+  final double totalBal;
+  const TransactionInputScreen(
+      {super.key, required this.transactionStat, required this.totalBal});
 
   @override
-  _TransactionInputScreenState createState() => _TransactionInputScreenState();
+  _TransactionInputScreenState createState() =>
+      _TransactionInputScreenState(transactionStat, totalBal);
 }
 
 class _TransactionInputScreenState extends State<TransactionInputScreen> {
@@ -36,10 +39,14 @@ class _TransactionInputScreenState extends State<TransactionInputScreen> {
 
   int count = 0;
 
+  _TransactionInputScreenState(this.transactionStat, this.totalBal);
+  bool transactionStat;
+  double totalBal;
+
   @override
   void initState() {
     super.initState();
-    isDeposit = widget.transactionStat;
+    isDeposit = transactionStat;
     getContributorsFromDatabase();
     _sendingMsgProgressBar = ProgressBar();
   }
@@ -304,9 +311,41 @@ class _TransactionInputScreenState extends State<TransactionInputScreen> {
                     }
                     if (_formKey.currentState!.validate()) {
                       // All form fields are valid, process the form data here
-                      showSendingProgressBar();
-                      _saveTransaction();
-                      hideSendingProgressBar();
+                      if (!isDeposit) {
+                        double aggregate = totalBal + amount;
+                        if (totalBal == 0) {
+                          AwesomeDialog(
+                            context: context,
+                            dialogType: DialogType.error,
+                            animType: AnimType.topSlide,
+                            title: 'No Deposit Yet!',
+                            desc: 'You need deposit first before you withdraw',
+                            btnOkText: 'Ok',
+                            btnOkColor: Colors.black45,
+                            btnOkOnPress: () {
+                              Navigator.pushNamed(context, '/');
+                            },
+                          ).show();
+                        } else if (aggregate < 1) {
+                          AwesomeDialog(
+                            context: context,
+                            dialogType: DialogType.error,
+                            animType: AnimType.topSlide,
+                            title: 'Low Balance!',
+                            desc:
+                                'You cannot withdraw that big amount, deposit more',
+                            btnOkText: 'Ok',
+                            btnOkColor: Colors.black45,
+                            btnOkOnPress: () {
+                              Navigator.pushNamed(context, '/');
+                            },
+                          ).show();
+                        } else {
+                          _processTransaction();
+                        }
+                      } else {
+                        _processTransaction();
+                      }
                     }
                   },
                   child: Text(
@@ -323,20 +362,10 @@ class _TransactionInputScreenState extends State<TransactionInputScreen> {
     );
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2023),
-      lastDate: DateTime.now(),
-      //lastDate: DateTime(2100),
-    );
-
-    if (picked != null && picked != selectedDate) {
-      setState(() {
-        selectedDate = picked;
-      });
-    }
+  void _processTransaction() {
+    showSendingProgressBar();
+    _saveTransaction();
+    hideSendingProgressBar();
   }
 
   void _saveTransaction() async {
@@ -380,8 +409,6 @@ class _TransactionInputScreenState extends State<TransactionInputScreen> {
   }
 
   Future<List<Contributor>> getContributorsFromDatabase() async {
-    // final db = await databaseHelper
-    //     .initDatabase(); // Replace 'database' with your SQLite database instance
     final contributorMaps = await databaseHelper.getContributorMapList();
 
     setState(() {
