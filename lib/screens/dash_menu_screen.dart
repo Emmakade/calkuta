@@ -6,19 +6,21 @@ import 'package:calkuta/screens/trans.dart';
 import 'package:calkuta/util/my_color.dart';
 import 'package:flutter/material.dart';
 
-class DashScreen extends StatefulWidget {
+class DashMenuScreen extends StatefulWidget {
+  const DashMenuScreen({super.key});
+
   @override
-  State<DashScreen> createState() => _DashScreenState();
+  State<DashMenuScreen> createState() => _DashMenuScreenState();
 }
 
-class _DashScreenState extends State<DashScreen> {
+class _DashMenuScreenState extends State<DashMenuScreen> {
   int current = 0;
   Contributor? contributor;
 
   final screens = [
-    DashboardScreen(),
+    const DashboardScreen(),
     const TransactionList(),
-    AllContributors(),
+    const AllContributors(),
     RegistrationScreen(appBarTitle: 'REGISTRATION', contributor: Contributor())
   ];
 
